@@ -1,0 +1,60 @@
+version: '3'
+
+services:
+  mysql_master1:
+    image: mysql:latest
+    container_name: mysql_master1
+    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=replica
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: replica
+    ports:
+      - "3306:3306"
+
+  mysql_master2:
+    image: mysql:latest
+    container_name: mysql_master2
+    command: --server-id=2 --log-bin=mysql-bin --binlog-do-db=replica
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: replica
+    ports:
+      - "3307:3306"
+
+  phpmyadmin1:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin1
+    environment:
+      PMA_HOSTS: "mysql_master1"
+      PMA_ARBITRARY: 1
+      PMA_USER: "root"
+      PMA_PASSWORD: "root"
+    depends_on:
+      - mysql_master1
+    ports:
+      - "8080:80"
+
+  phpmyadmin2:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin2
+    environment:
+      PMA_HOSTS: "mysql_master2"
+      PMA_ARBITRARY: 1
+      PMA_USER: "root"
+      PMA_PASSWORD: "root"
+    depends_on:
+      - mysql_master2
+    ports:
+      - "8081:80"
+
+  nginx:
+    container_name: nginx
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - 8000:81
+
+    depends_on:
+      - phpmyadmin1
+      - phpmyadmin2
